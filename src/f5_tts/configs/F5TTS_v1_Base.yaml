@@ -34,12 +34,12 @@ model:
     pe_attn_head: null
     checkpoint_activations: False  # recompute activations and save memory for extra compute
   mel_spec:
-    target_sample_rate: 24000
-    n_mel_channels: 100
+    target_sample_rate: 44100
+    n_mel_channels: 128
     hop_length: 256
     win_length: 1024
     n_fft: 1024
-    mel_spec_type: vocos  # vocos | bigvgan
+    mel_spec_type: bigvgan  # vocos | bigvgan
   vocoder:
     is_local: False  # use local offline ckpt or not
     local_path: null  # local vocoder path

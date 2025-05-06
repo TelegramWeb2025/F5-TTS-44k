@@ -132,7 +132,7 @@ def load_vocoder(vocoder_name="vocos", is_local=False, local_path="", device=dev
             vocoder = bigvgan.BigVGAN.from_pretrained(local_path, use_cuda_kernel=False)
         else:
             vocoder = bigvgan.BigVGAN.from_pretrained(
-                "nvidia/bigvgan_v2_24khz_100band_256x", use_cuda_kernel=False, cache_dir=hf_cache_dir
+                "nvidia/bigvgan_v2_44khz_128band_256x", use_cuda_kernel=False, cache_dir=hf_cache_dir
             )
 
         vocoder.remove_weight_norm()

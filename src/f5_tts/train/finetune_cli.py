@@ -12,9 +12,9 @@ from f5_tts.model.utils import get_tokenizer
 # -------------------------- Dataset Settings --------------------------- #
 target_sample_rate = 44100
 n_mel_channels = 128
-hop_length = 256
-win_length = 1024
-n_fft = 1024
+hop_length = 512
+win_length = 2048
+n_fft = 2048
 mel_spec_type = "bigvgan"  # 'vocos' or 'bigvgan'
 
 

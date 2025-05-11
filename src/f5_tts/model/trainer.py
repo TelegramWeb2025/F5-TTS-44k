@@ -25,34 +25,35 @@ from f5_tts.model.utils import default, exists
 
 class Trainer:
     def __init__(
-        self,
-        model: CFM,
-        epochs,
-        learning_rate,
-        num_warmup_updates=20000,
-        save_per_updates=1000,
-        keep_last_n_checkpoints: int = -1,  # -1 to keep all, 0 to not save intermediate, > 0 to keep last N checkpoints
-        checkpoint_path=None,
-        batch_size_per_gpu=32,
-        batch_size_type: str = "sample",
-        max_samples=32,
-        grad_accumulation_steps=1,
-        max_grad_norm=1.0,
-        noise_scheduler: str | None = None,
-        duration_predictor: torch.nn.Module | None = None,
-        logger: str | None = "wandb",  # "wandb" | "tensorboard" | None
-        wandb_project="test_f5-tts",
-        wandb_run_name="test_run",
-        wandb_resume_id: str = None,
-        log_samples: bool = False,
-        last_per_updates=None,
-        accelerate_kwargs: dict = dict(),
-        ema_kwargs: dict = dict(),
-        bnb_optimizer: bool = False,
-        mel_spec_type: str = "vocos",  # "vocos" | "bigvgan"
-        is_local_vocoder: bool = False,  # use local path vocoder
-        local_vocoder_path: str = "",  # local vocoder path
-        model_cfg_dict: dict = dict(),  # training config
+            self,
+            model: CFM,
+            epochs,
+            learning_rate,
+            num_warmup_updates=20000,
+            save_per_updates=1000,
+            keep_last_n_checkpoints: int = -1,
+            # -1 to keep all, 0 to not save intermediate, > 0 to keep last N checkpoints
+            checkpoint_path=None,
+            batch_size_per_gpu=32,
+            batch_size_type: str = "sample",
+            max_samples=32,
+            grad_accumulation_steps=1,
+            max_grad_norm=1.0,
+            noise_scheduler: str | None = None,
+            duration_predictor: torch.nn.Module | None = None,
+            logger: str | None = "wandb",  # "wandb" | "tensorboard" | None
+            wandb_project="test_f5-tts",
+            wandb_run_name="test_run",
+            wandb_resume_id: str = None,
+            log_samples: bool = False,
+            last_per_updates=None,
+            accelerate_kwargs: dict = dict(),
+            ema_kwargs: dict = dict(),
+            bnb_optimizer: bool = False,
+            mel_spec_type: str = "vocos",  # "vocos" | "bigvgan"
+            is_local_vocoder: bool = False,  # use local path vocoder
+            local_vocoder_path: str = "",  # local vocoder path
+            model_cfg_dict: dict = dict(),  # training config
     ):
         ddp_kwargs = DistributedDataParallelKwargs(find_unused_parameters=True)
 
@@ -169,9 +170,9 @@ class Trainer:
                         f
                         for f in os.listdir(self.checkpoint_path)
                         if f.startswith("model_")
-                        and not f.startswith("pretrained_")  # Exclude pretrained models
-                        and f.endswith(".pt")
-                        and f != "model_last.pt"
+                           and not f.startswith("pretrained_")  # Exclude pretrained models
+                           and f.endswith(".pt")
+                           and f != "model_last.pt"
                     ]
                     checkpoints.sort(key=lambda x: int(x.split("_")[1].split(".")[0]))
                     while len(checkpoints) > self.keep_last_n_checkpoints:
@@ -181,9 +182,9 @@ class Trainer:
 
     def load_checkpoint(self):
         if (
-            not exists(self.checkpoint_path)
-            or not os.path.exists(self.checkpoint_path)
-            or not any(filename.endswith((".pt", ".safetensors")) for filename in os.listdir(self.checkpoint_path))
+                not exists(self.checkpoint_path)
+                or not os.path.exists(self.checkpoint_path)
+                or not any(filename.endswith((".pt", ".safetensors")) for filename in os.listdir(self.checkpoint_path))
         ):
             return 0
 
@@ -243,9 +244,11 @@ class Trainer:
 
             self.accelerator.unwrap_model(self.model).load_state_dict(checkpoint["model_state_dict"])
             self.accelerator.unwrap_model(self.optimizer).load_state_dict(checkpoint["optimizer_state_dict"])
-            if self.scheduler:
-                self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
             update = checkpoint["update"]
+            if self.scheduler:
+                # 不要从权重中加载学习率，因为有时候训练总步数会调整
+                # self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
+                self.scheduler.last_epoch = update
         else:
             checkpoint["model_state_dict"] = {
                 k.replace("ema_model.", ""): v
@@ -311,7 +314,7 @@ class Trainer:
         #  accelerator.prepare() dispatches batches to devices;
         #  which means the length of dataloader calculated before, should consider the number of devices
         warmup_updates = (
-            self.num_warmup_updates * self.accelerator.num_processes
+                self.num_warmup_updates * self.accelerator.num_processes
         )  # consider a fixed warmup steps while using accelerate multi-gpu ddp
         # otherwise by default with split_batches=False, warmup steps change with num_processes
         total_updates = math.ceil(len(train_dataloader) / self.grad_accumulation_steps) * self.epochs
@@ -437,3 +440,36 @@ class Trainer:
         self.save_checkpoint(global_update, last=True)
 
         self.accelerator.end_training()
+
+    def check_lr(self, current_iter, new_warmup_updates, new_total_updates, initial_lr, current_lr):
+        if current_iter > 0:
+            if current_iter < new_warmup_updates:
+                # 仍处于 warmup 阶段
+                new_warmup_scheduler = LinearLR(
+                    self.optimizer,
+                    start_factor=current_lr / initial_lr,
+                    end_factor=1.0,
+                    total_iters=new_warmup_updates - current_iter
+                )
+                new_decay_scheduler = LinearLR(
+                    self.optimizer,
+                    start_factor=1.0,
+                    end_factor=1e-8,
+                    total_iters=new_total_updates - new_warmup_updates
+                )
+                self.scheduler = SequentialLR(
+                    self.optimizer,
+                    schedulers=[new_warmup_scheduler, new_decay_scheduler],
+                    milestones=[new_warmup_updates]
+                )
+            else:
+                # 处于 decay 阶段
+                new_decay_scheduler = LinearLR(
+                    self.optimizer,
+                    start_factor=current_lr / initial_lr,
+                    end_factor=1e-8,
+                    total_iters=new_total_updates - current_iter
+                )
+                self.scheduler = new_decay_scheduler
+
+            self.scheduler.last_epoch = current_iter

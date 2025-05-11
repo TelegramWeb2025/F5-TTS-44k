@@ -17,7 +17,7 @@ from tqdm import tqdm
 
 from f5_tts.model import CFM
 from f5_tts.model.dataset import DynamicBatchSampler, collate_fn
-from f5_tts.model.utils import default, exists
+from f5_tts.model.utils import default, exists, calculate_learning_rates
 
 
 # trainer
@@ -246,9 +246,7 @@ class Trainer:
             self.accelerator.unwrap_model(self.optimizer).load_state_dict(checkpoint["optimizer_state_dict"])
             update = checkpoint["update"]
             if self.scheduler:
-                # 不要从权重中加载学习率，因为有时候训练总步数会调整
-                # self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
-                self.scheduler.last_epoch = update
+                self.scheduler.load_state_dict(checkpoint["scheduler_state_dict"])
         else:
             checkpoint["model_state_dict"] = {
                 k.replace("ema_model.", ""): v
@@ -328,6 +326,18 @@ class Trainer:
             train_dataloader, self.scheduler
         )  # actual multi_gpu updates = single_gpu updates / gpu nums
         start_update = self.load_checkpoint()
+        if start_update > 0:
+            # 假设过了warmup阶段
+            expect_lrs = calculate_learning_rates(self.scheduler.last_epoch, total_updates, self.optimizer.initial_lr,
+                                                  warmup_updates)
+            print("optimizer lr", self.optimizer.lr, expect_lrs['lr_optimizer'])
+            self.optimizer.lr = expect_lrs['lr_optimizer']
+            print("sequence lr", self.scheduler._last_lr, expect_lrs['sequential_scheduler_lr'])
+            self.scheduler._last_lr = expect_lrs['sequential_scheduler_lr']
+            print("decay lr", self.scheduler._schedulers[1]._last_lr, expect_lrs['lr_decay_scheduler'])
+            self.scheduler._schedulers[1]._last_lr = expect_lrs['lr_decay_scheduler']
+            self.scheduler._schedulers[1].total_iters = decay_updates
+
         global_update = start_update
 
         if exists(resumable_with_seed):

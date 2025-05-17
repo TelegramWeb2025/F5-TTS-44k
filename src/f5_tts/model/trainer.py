@@ -315,6 +315,7 @@ class Trainer:
         )  # consider a fixed warmup steps while using accelerate multi-gpu ddp
         # otherwise by default with split_batches=False, warmup steps change with num_processes
         total_updates = math.ceil(len(train_dataloader) / self.grad_accumulation_steps) * self.epochs
+        print("total steps", total_updates)
         decay_updates = total_updates - warmup_updates
         warmup_scheduler = LinearLR(self.optimizer, start_factor=1e-8, end_factor=1.0, total_iters=warmup_updates)
         decay_scheduler = LinearLR(self.optimizer, start_factor=1.0, end_factor=1e-8, total_iters=decay_updates)

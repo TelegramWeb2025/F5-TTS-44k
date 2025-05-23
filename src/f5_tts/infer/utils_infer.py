@@ -46,12 +46,12 @@ device = (
 
 # -----------------------------------------
 
-target_sample_rate = 24000
-n_mel_channels = 100
-hop_length = 256
-win_length = 1024
-n_fft = 1024
-mel_spec_type = "vocos"
+target_sample_rate = 44100
+n_mel_channels = 128
+hop_length = 512
+win_length = 2048
+n_fft = 2048
+mel_spec_type = "bigvgan"
 target_rms = 0.1
 cross_fade_duration = 0.15
 ode_method = "euler"

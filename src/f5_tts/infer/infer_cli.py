@@ -297,9 +297,9 @@ def main():
     for voice in voices:
         print("Voice:", voice)
         print("ref_audio ", voices[voice]["ref_audio"])
-        voices[voice]["ref_audio"], voices[voice]["ref_text"] = preprocess_ref_audio_text(
-            voices[voice]["ref_audio"], voices[voice]["ref_text"]
-        )
+        # voices[voice]["ref_audio"], voices[voice]["ref_text"] = preprocess_ref_audio_text(
+        #     voices[voice]["ref_audio"], voices[voice]["ref_text"]
+        # )
         print("ref_audio_", voices[voice]["ref_audio"], "\n\n")
 
     generated_audio_segments = []

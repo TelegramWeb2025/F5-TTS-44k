@@ -470,6 +470,9 @@ def infer_batch_process(
             gen_text_len = len(gen_text.encode("utf-8"))
             duration = ref_audio_len + int(ref_audio_len / ref_text_len * gen_text_len / local_speed)
 
+        if duration > 15 * target_sample_rate / hop_length:
+            print(f"\033[31mToo long gen text({duration * hop_length / target_sample_rate}s): {gen_text}\033[0m")
+
         # inference
         with torch.inference_mode():
             generated, _ = model_obj.sample(

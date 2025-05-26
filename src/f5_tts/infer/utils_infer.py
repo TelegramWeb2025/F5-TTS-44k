@@ -33,6 +33,7 @@ from f5_tts.model.utils import convert_char_to_pinyin, get_tokenizer
 
 
 _ref_audio_cache = {}
+_ref_text_cache = {}
 
 device = (
     "cuda"
@@ -43,6 +44,8 @@ device = (
     if torch.backends.mps.is_available()
     else "cpu"
 )
+
+tempfile_kwargs = {"delete_on_close": False} if sys.version_info >= (3, 12) else {"delete": False}
 
 # -----------------------------------------
 

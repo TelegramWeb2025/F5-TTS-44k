@@ -3,6 +3,7 @@
 
 import gc
 import json
+import os
 import re
 import tempfile
 from collections import OrderedDict
@@ -41,6 +42,7 @@ from f5_tts.infer.utils_infer import (
     preprocess_ref_audio_text,
     remove_silence_for_generated_wav,
     save_spectrogram,
+    tempfile_kwargs,
 )
 from f5_tts.model import DiT, UNetT
 
@@ -189,16 +191,20 @@ def infer(
 
     # Remove silence
     if remove_silence:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as f:
-            sf.write(f.name, final_wave, final_sample_rate)
+        with tempfile.NamedTemporaryFile(suffix=".wav", **tempfile_kwargs) as f:
+            temp_path = f.name
+        try:
+            sf.write(temp_path, final_wave, final_sample_rate)
             remove_silence_for_generated_wav(f.name)
             final_wave, _ = torchaudio.load(f.name)
+        finally:
+            os.unlink(temp_path)
         final_wave = final_wave.squeeze().cpu().numpy()
 
     # Save the spectrogram
-    with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp_spectrogram:
+    with tempfile.NamedTemporaryFile(suffix=".png", **tempfile_kwargs) as tmp_spectrogram:
         spectrogram_path = tmp_spectrogram.name
-        save_spectrogram(combined_spectrogram, spectrogram_path)
+    save_spectrogram(combined_spectrogram, spectrogram_path)
 
     return (final_sample_rate, final_wave), spectrogram_path, ref_text, used_seed
 

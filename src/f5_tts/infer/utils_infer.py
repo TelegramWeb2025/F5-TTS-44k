@@ -439,8 +439,8 @@ def infer_batch_process(
         audio = torch.mean(audio, dim=0, keepdim=True)
 
     rms = torch.sqrt(torch.mean(torch.square(audio)))
-    if rms < target_rms:
-        audio = audio * target_rms / rms
+    # if rms < target_rms:
+    #     audio = audio * target_rms / rms
     if sr != target_sample_rate:
         resampler = torchaudio.transforms.Resample(sr, target_sample_rate)
         audio = resampler(audio)
@@ -492,8 +492,8 @@ def infer_batch_process(
                 generated_wave = vocoder.decode(generated)
             elif mel_spec_type == "bigvgan":
                 generated_wave = vocoder(generated)
-            if rms < target_rms:
-                generated_wave = generated_wave * rms / target_rms
+            # if rms < target_rms:
+            #     generated_wave = generated_wave * rms / target_rms
 
             # wav -> numpy
             generated_wave = generated_wave.squeeze().cpu().numpy()

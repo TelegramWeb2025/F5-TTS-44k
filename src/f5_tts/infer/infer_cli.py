@@ -12,6 +12,7 @@ import tomli
 from cached_path import cached_path
 from hydra.utils import get_class
 from omegaconf import OmegaConf
+from sanitize_filename import sanitize
 
 from f5_tts.infer.utils_infer import (
     cfg_strength,
@@ -30,7 +31,6 @@ from f5_tts.infer.utils_infer import (
     target_rms,
 )
 
-
 parser = argparse.ArgumentParser(
     prog="python3 infer-cli.py",
     description="Commandline interface for E2/F5 TTS with Advanced Batch Processing.",
@@ -43,7 +43,6 @@ parser.add_argument(
     default=os.path.join(files("f5_tts").joinpath("infer/examples/basic"), "basic.toml"),
     help="The configuration file, default see infer/examples/basic/basic.toml",
 )
-
 
 # Note. Not to provide default value here in order to read default from config file
 
@@ -170,11 +169,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-
 # config file
 
 config = tomli.load(open(args.config, "rb"))
-
 
 # command-line interface parameters
 
@@ -210,7 +207,6 @@ speed = args.speed or config.get("speed", speed)
 fix_duration = args.fix_duration or config.get("fix_duration", fix_duration)
 device = args.device or config.get("device", device)
 
-
 # patches for pip pkg user
 if "infer/examples/" in ref_audio:
     ref_audio = str(files("f5_tts").joinpath(f"{ref_audio}"))
@@ -222,12 +218,10 @@ if "voices" in config:
         if "infer/examples/" in voice_ref_audio:
             config["voices"][voice]["ref_audio"] = str(files("f5_tts").joinpath(f"{voice_ref_audio}"))
 
-
 # ignore gen_text if gen_file provided
 
 if gen_file:
     gen_text = codecs.open(gen_file, "r", "utf-8").read()
-
 
 # output path
 
@@ -237,7 +231,6 @@ if save_chunk:
     output_chunk_dir = os.path.join(output_dir, f"{Path(output_file).stem}_chunks")
     if not os.path.exists(output_chunk_dir):
         os.makedirs(output_chunk_dir)
-
 
 # load vocoder
 
@@ -249,7 +242,6 @@ elif vocoder_name == "bigvgan":
 vocoder = load_vocoder(
     vocoder_name=vocoder_name, is_local=load_vocoder_from_local, local_path=vocoder_local_path, device=device
 )
-
 
 # load TTS model
 
@@ -345,7 +337,7 @@ def main():
             if len(gen_text_) > 200:
                 gen_text_ = gen_text_[:200] + " ... "
             sf.write(
-                os.path.join(output_chunk_dir, f"{len(generated_audio_segments):03d}_{gen_text_}.wav"),
+                os.path.join(output_chunk_dir, sanitize(f"{len(generated_audio_segments):03d}_{gen_text_}.wav")),
                 audio_segment,
                 final_sample_rate,
             )

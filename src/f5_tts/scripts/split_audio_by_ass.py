@@ -78,9 +78,12 @@ def process_audio_and_subtitles(ass_file_path: Path, output_dir: Path, separated
     ) for row in ass_data.events if not do_skip_line(row.text)]
 
     # Load the audio file
-    audio_file = ass_file_path.with_name(ass_data.sections['Aegisub Project Garbage']['Audio File'])
-    logger.info("Loading audio: %s" % (audio_file.name, ))
-    if not audio_file.exists():
+    try:
+        audio_file = ass_file_path.with_name(ass_data.sections['Aegisub Project Garbage']['Audio File'])
+    except Exception as e:
+        audio_file = None
+        print(e)
+    if not audio_file or not audio_file.exists():
         audio_file = ass_file_path.with_suffix(".wav")
         
     if audio_file.exists() :

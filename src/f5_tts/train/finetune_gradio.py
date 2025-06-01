@@ -1083,7 +1083,8 @@ def vocab_extend(project_name, symbols, model_type):
         ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
     elif model_type == "E2TTS_Base":
         ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
-
+    elif model_type == 'F5TTS_Small':
+        ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Small/model_1200000.pt"))
     vocab_size_new = len(miss_symbols)
 
     dataset_name = name_project.replace("_pinyin", "").replace("_char", "")
@@ -1484,7 +1485,7 @@ Using the extended model, you can finetune to a new language that is missing sym
 ```""")
 
             exp_name_extend = gr.Radio(
-                label="Model", choices=["F5TTS_v1_Base", "F5TTS_Base", "E2TTS_Base"], value="F5TTS_v1_Base"
+                label="Model", choices=["F5TTS_Small", "F5TTS_v1_Base", "F5TTS_Base", "E2TTS_Base"], value="F5TTS_Small"
             )
 
             with gr.Row():

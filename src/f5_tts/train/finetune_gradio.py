@@ -1075,24 +1075,23 @@ def vocab_extend(project_name, symbols, model_type):
     with open(file_vocab_project, "w", encoding="utf-8") as f:
         f.write("\n".join(vocab))
 
+    ckpt_path = None
     if model_type == "F5TTS_v1_Base":
         ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_v1_Base/model_1250000.safetensors"))
     elif model_type == "F5TTS_Base":
         ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
     elif model_type == "E2TTS_Base":
         ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
-    elif model_type == 'F5TTS_Small':  # 不需要微调
-        ckpt_path = None
-    vocab_size_new = len(miss_symbols)
-
-    dataset_name = name_project.replace("_pinyin", "").replace("_char", "")
-    new_ckpt_path = os.path.join(path_project_ckpts, dataset_name)
-    os.makedirs(new_ckpt_path, exist_ok=True)
-
-    # Add pretrained_ prefix to model when copying for consistency with finetune_cli.py
-    new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_" + os.path.basename(ckpt_path))
 
     if ckpt_path:
+        vocab_size_new = len(miss_symbols)
+
+        dataset_name = name_project.replace("_pinyin", "").replace("_char", "")
+        new_ckpt_path = os.path.join(path_project_ckpts, dataset_name)
+        os.makedirs(new_ckpt_path, exist_ok=True)
+
+        # Add pretrained_ prefix to model when copying for consistency with finetune_cli.py
+        new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_" + os.path.basename(ckpt_path))
         size = expand_model_embeddings(ckpt_path, new_ckpt_file, num_new_tokens=vocab_size_new)
     else:
         size = len("vocab")

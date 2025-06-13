@@ -1563,7 +1563,7 @@ The auto-setting is still experimental. Set a large value of epoch if not sure; 
 If you encounter a memory error, try reducing the batch size per GPU to a smaller number.
 ```""")
             with gr.Row():
-                exp_name = gr.Radio(label="Model", choices=["F5TTS_v1_Base","F5TTS_v1_Base", "F5TTS_Base", "E2TTS_Base"])
+                exp_name = gr.Radio(label="Model", choices=["F5TTS_Small","F5TTS_v1_Base", "F5TTS_Base", "E2TTS_Base"])
                 tokenizer_file = gr.Textbox(label="Tokenizer File")
                 file_checkpoint_train = gr.Textbox(label="Path to the Pretrained Checkpoint")
 

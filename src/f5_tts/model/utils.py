@@ -95,9 +95,9 @@ def list_str_to_tensor(text: list[str], padding_value=-1) -> int["b nt"]:  # noq
 
 # char tokenizer, based on custom dataset's extracted .txt file
 def list_str_to_idx(
-    text: list[str] | list[list[str]],
-    vocab_char_map: dict[str, int],  # {char: idx}
-    padding_value=-1,
+        text: list[str] | list[list[str]],
+        vocab_char_map: dict[str, int],  # {char: idx}
+        padding_value=-1,
 ) -> int["b nt"]:  # noqa: F722
     list_idx_tensors = [torch.tensor([vocab_char_map.get(c, 0) for c in t]) for t in text]  # pinyin or char style
     text = pad_sequence(list_idx_tensors, padding_value=padding_value, batch_first=True)
@@ -150,12 +150,12 @@ def convert_char_to_pinyin(text_list, polyphone=True):
 
     final_text_list = []
     custom_trans = str.maketrans(
-        {";": ",", "“": '"', "”": '"', "‘": "'", "’": "'"}
+        {";": ",", "“": '', "”": '', "\"": '', "‘": "'", "’": "'"}
     )  # add custom trans here, to address oov
 
     def is_chinese(c):
         return (
-            "\u3100" <= c <= "\u9fff"  # common chinese characters
+                "\u3100" <= c <= "\u9fff"  # common chinese characters
         )
 
     for text in text_list:
@@ -193,7 +193,7 @@ def convert_char_to_pinyin(text_list, polyphone=True):
 def repetition_found(text, length=2, tolerance=10):
     pattern_count = defaultdict(int)
     for i in range(len(text) - length + 1):
-        pattern = text[i : i + length]
+        pattern = text[i: i + length]
         pattern_count[pattern] += 1
     for pattern, count in pattern_count.items():
         if count > tolerance:

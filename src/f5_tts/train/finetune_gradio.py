@@ -32,7 +32,6 @@ from f5_tts.api import F5TTS
 from f5_tts.infer.utils_infer import transcribe
 from f5_tts.model.utils import convert_char_to_pinyin
 
-
 training_process = None
 system = platform.system()
 python_executable = sys.executable or "python"
@@ -40,7 +39,6 @@ tts_api = None
 last_checkpoint = ""
 last_device = ""
 last_ema = None
-
 
 path_data = str(files("f5_tts").joinpath("../../data"))
 path_project_ckpts = str(files("f5_tts").joinpath("../../ckpts"))
@@ -59,26 +57,26 @@ device = (
 
 # Save settings from a JSON file
 def save_settings(
-    project_name,
-    exp_name,
-    learning_rate,
-    batch_size_per_gpu,
-    batch_size_type,
-    max_samples,
-    grad_accumulation_steps,
-    max_grad_norm,
-    epochs,
-    num_warmup_updates,
-    save_per_updates,
-    keep_last_n_checkpoints,
-    last_per_updates,
-    finetune,
-    file_checkpoint_train,
-    tokenizer_type,
-    tokenizer_file,
-    mixed_precision,
-    logger,
-    ch_8bit_adam,
+        project_name,
+        exp_name,
+        learning_rate,
+        batch_size_per_gpu,
+        batch_size_type,
+        max_samples,
+        grad_accumulation_steps,
+        max_grad_norm,
+        epochs,
+        num_warmup_updates,
+        save_per_updates,
+        keep_last_n_checkpoints,
+        last_per_updates,
+        finetune,
+        file_checkpoint_train,
+        tokenizer_type,
+        tokenizer_file,
+        mixed_precision,
+        logger,
+        ch_8bit_adam,
 ):
     path_project = os.path.join(path_project_ckpts, project_name)
     os.makedirs(path_project, exist_ok=True)
@@ -184,10 +182,10 @@ def clear_text(text):
 
 
 def get_rms(
-    y,
-    frame_length=2048,
-    hop_length=512,
-    pad_mode="constant",
+        y,
+        frame_length=2048,
+        hop_length=512,
+        pad_mode="constant",
 ):  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.py
     padding = (int(frame_length // 2), int(frame_length // 2))
     y = np.pad(y, padding, mode=pad_mode)
@@ -218,13 +216,13 @@ def get_rms(
 
 class Slicer:  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.py
     def __init__(
-        self,
-        sr: int,
-        threshold: float = -40.0,
-        min_length: int = 2000,
-        min_interval: int = 300,
-        hop_size: int = 20,
-        max_sil_kept: int = 2000,
+            self,
+            sr: int,
+            threshold: float = -40.0,
+            min_length: int = 2000,
+            min_interval: int = 300,
+            hop_size: int = 20,
+            max_sil_kept: int = 2000,
     ):
         if not min_length >= min_interval >= hop_size:
             raise ValueError("The following condition must be satisfied: min_length >= min_interval >= hop_size")
@@ -240,9 +238,9 @@ class Slicer:  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.
 
     def _apply_slice(self, waveform, begin, end):
         if len(waveform.shape) > 1:
-            return waveform[:, begin * self.hop_size : min(waveform.shape[1], end * self.hop_size)]
+            return waveform[:, begin * self.hop_size: min(waveform.shape[1], end * self.hop_size)]
         else:
-            return waveform[begin * self.hop_size : min(waveform.shape[0], end * self.hop_size)]
+            return waveform[begin * self.hop_size: min(waveform.shape[0], end * self.hop_size)]
 
     # @timeit
     def slice(self, waveform):
@@ -274,17 +272,17 @@ class Slicer:  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.
                 continue
             # Need slicing. Record the range of silent frames to be removed.
             if i - silence_start <= self.max_sil_kept:
-                pos = rms_list[silence_start : i + 1].argmin() + silence_start
+                pos = rms_list[silence_start: i + 1].argmin() + silence_start
                 if silence_start == 0:
                     sil_tags.append((0, pos))
                 else:
                     sil_tags.append((pos, pos))
                 clip_start = pos
             elif i - silence_start <= self.max_sil_kept * 2:
-                pos = rms_list[i - self.max_sil_kept : silence_start + self.max_sil_kept + 1].argmin()
+                pos = rms_list[i - self.max_sil_kept: silence_start + self.max_sil_kept + 1].argmin()
                 pos += i - self.max_sil_kept
-                pos_l = rms_list[silence_start : silence_start + self.max_sil_kept + 1].argmin() + silence_start
-                pos_r = rms_list[i - self.max_sil_kept : i + 1].argmin() + i - self.max_sil_kept
+                pos_l = rms_list[silence_start: silence_start + self.max_sil_kept + 1].argmin() + silence_start
+                pos_r = rms_list[i - self.max_sil_kept: i + 1].argmin() + i - self.max_sil_kept
                 if silence_start == 0:
                     sil_tags.append((0, pos_r))
                     clip_start = pos_r
@@ -292,8 +290,8 @@ class Slicer:  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.
                     sil_tags.append((min(pos_l, pos), max(pos_r, pos)))
                     clip_start = max(pos_r, pos)
             else:
-                pos_l = rms_list[silence_start : silence_start + self.max_sil_kept + 1].argmin() + silence_start
-                pos_r = rms_list[i - self.max_sil_kept : i + 1].argmin() + i - self.max_sil_kept
+                pos_l = rms_list[silence_start: silence_start + self.max_sil_kept + 1].argmin() + silence_start
+                pos_r = rms_list[i - self.max_sil_kept: i + 1].argmin() + i - self.max_sil_kept
                 if silence_start == 0:
                     sil_tags.append((0, pos_r))
                 else:
@@ -304,7 +302,7 @@ class Slicer:  # https://github.com/RVC-Boss/GPT-SoVITS/blob/main/tools/slicer2.
         total_frames = rms_list.shape[0]
         if silence_start is not None and total_frames - silence_start >= self.min_interval:
             silence_end = min(total_frames, silence_start + self.max_sil_kept)
-            pos = rms_list[silence_start : silence_end + 1].argmin() + silence_start
+            pos = rms_list[silence_start: silence_end + 1].argmin() + silence_start
             sil_tags.append((pos, total_frames + 1))
         # Apply and return slices.
         ####音频+起始时间+终止时间
@@ -363,27 +361,27 @@ def terminate_process(pid):
 
 
 def start_training(
-    dataset_name,
-    exp_name,
-    learning_rate,
-    batch_size_per_gpu,
-    batch_size_type,
-    max_samples,
-    grad_accumulation_steps,
-    max_grad_norm,
-    epochs,
-    num_warmup_updates,
-    save_per_updates,
-    keep_last_n_checkpoints,
-    last_per_updates,
-    finetune,
-    file_checkpoint_train,
-    tokenizer_type,
-    tokenizer_file,
-    mixed_precision,
-    stream,
-    logger,
-    ch_8bit_adam,
+        dataset_name,
+        exp_name,
+        learning_rate,
+        batch_size_per_gpu,
+        batch_size_type,
+        max_samples,
+        grad_accumulation_steps,
+        max_grad_norm,
+        epochs,
+        num_warmup_updates,
+        save_per_updates,
+        keep_last_n_checkpoints,
+        last_per_updates,
+        finetune,
+        file_checkpoint_train,
+        tokenizer_type,
+        tokenizer_file,
+        mixed_precision,
+        stream,
+        logger,
+        ch_8bit_adam,
 ):
     global training_process, tts_api, stop_signal
 
@@ -734,9 +732,9 @@ def format_seconds_to_hms(seconds):
 
 
 def get_correct_audio_path(
-    audio_input,
-    base_path="wavs",
-    supported_formats=("wav", "mp3", "aac", "flac", "m4a", "alac", "ogg", "aiff", "wma", "amr"),
+        audio_input,
+        base_path="wavs",
+        supported_formats=("wav", "mp3", "aac", "flac", "m4a", "alac", "ogg", "aiff", "wma", "amr"),
 ):
     file_audio = None
 
@@ -879,14 +877,14 @@ def check_user(value):
 
 
 def calculate_train(
-    name_project,
-    epochs,
-    learning_rate,
-    batch_size_per_gpu,
-    batch_size_type,
-    max_samples,
-    num_warmup_updates,
-    finetune,
+        name_project,
+        epochs,
+        learning_rate,
+        batch_size_per_gpu,
+        batch_size_type,
+        max_samples,
+        num_warmup_updates,
+        finetune,
 ):
     path_project = os.path.join(path_data, name_project)
     file_duration = os.path.join(path_project, "duration.json")
@@ -917,16 +915,16 @@ def calculate_train(
         total_memory = 0
         for i in range(gpu_count):
             gpu_properties = torch.cuda.get_device_properties(i)
-            total_memory += gpu_properties.total_memory / (1024**3)  # in GB
+            total_memory += gpu_properties.total_memory / (1024 ** 3)  # in GB
     elif torch.xpu.is_available():
         gpu_count = torch.xpu.device_count()
         total_memory = 0
         for i in range(gpu_count):
             gpu_properties = torch.xpu.get_device_properties(i)
-            total_memory += gpu_properties.total_memory / (1024**3)
+            total_memory += gpu_properties.total_memory / (1024 ** 3)
     elif torch.backends.mps.is_available():
         gpu_count = 1
-        total_memory = psutil.virtual_memory().available / (1024**3)
+        total_memory = psutil.virtual_memory().available / (1024 ** 3)
 
     avg_gpu_memory = total_memory / gpu_count
 
@@ -1083,8 +1081,8 @@ def vocab_extend(project_name, symbols, model_type):
         ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
     elif model_type == "E2TTS_Base":
         ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
-    elif model_type == 'F5TTS_Small':
-        ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Small/model_1200000.pt"))
+    elif model_type == 'F5TTS_Small':  # 不需要微调
+        ckpt_path = None
     vocab_size_new = len(miss_symbols)
 
     dataset_name = name_project.replace("_pinyin", "").replace("_char", "")
@@ -1094,7 +1092,10 @@ def vocab_extend(project_name, symbols, model_type):
     # Add pretrained_ prefix to model when copying for consistency with finetune_cli.py
     new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_" + os.path.basename(ckpt_path))
 
-    size = expand_model_embeddings(ckpt_path, new_ckpt_file, num_new_tokens=vocab_size_new)
+    if ckpt_path:
+        size = expand_model_embeddings(ckpt_path, new_ckpt_file, num_new_tokens=vocab_size_new)
+    else:
+        size = len("vocab")
 
     vocab_new = "\n".join(miss_symbols)
     return f"vocab old size : {size_vocab}\nvocab new size : {size}\nvocab add : {vocab_size_new}\nnew symbols :\n{vocab_new}"
@@ -1199,7 +1200,8 @@ def get_random_sample_infer(project_name):
 
 
 def infer(
-    project, file_checkpoint, exp_name, ref_text, ref_audio, gen_text, nfe_step, use_ema, speed, seed, remove_silence
+        project, file_checkpoint, exp_name, ref_text, ref_audio, gen_text, nfe_step, use_ema, speed, seed,
+        remove_silence
 ):
     global last_checkpoint, last_device, tts_api, last_ema
 
@@ -1313,9 +1315,9 @@ def get_gpu_stats():
         for i in range(gpu_count):
             gpu_name = torch.cuda.get_device_name(i)
             gpu_properties = torch.cuda.get_device_properties(i)
-            total_memory = gpu_properties.total_memory / (1024**3)  # in GB
-            allocated_memory = torch.cuda.memory_allocated(i) / (1024**2)  # in MB
-            reserved_memory = torch.cuda.memory_reserved(i) / (1024**2)  # in MB
+            total_memory = gpu_properties.total_memory / (1024 ** 3)  # in GB
+            allocated_memory = torch.cuda.memory_allocated(i) / (1024 ** 2)  # in MB
+            reserved_memory = torch.cuda.memory_reserved(i) / (1024 ** 2)  # in MB
 
             gpu_stats += (
                 f"GPU {i} Name: {gpu_name}\n"
@@ -1328,9 +1330,9 @@ def get_gpu_stats():
         for i in range(gpu_count):
             gpu_name = torch.xpu.get_device_name(i)
             gpu_properties = torch.xpu.get_device_properties(i)
-            total_memory = gpu_properties.total_memory / (1024**3)  # in GB
-            allocated_memory = torch.xpu.memory_allocated(i) / (1024**2)  # in MB
-            reserved_memory = torch.xpu.memory_reserved(i) / (1024**2)  # in MB
+            total_memory = gpu_properties.total_memory / (1024 ** 3)  # in GB
+            allocated_memory = torch.xpu.memory_allocated(i) / (1024 ** 2)  # in MB
+            reserved_memory = torch.xpu.memory_reserved(i) / (1024 ** 2)  # in MB
 
             gpu_stats += (
                 f"GPU {i} Name: {gpu_name}\n"
@@ -1342,7 +1344,7 @@ def get_gpu_stats():
         gpu_count = 1
         gpu_stats += "MPS GPU\n"
         total_memory = psutil.virtual_memory().total / (
-            1024**3
+                1024 ** 3
         )  # Total system memory (MPS doesn't have its own memory)
         allocated_memory = 0
         reserved_memory = 0
@@ -1362,8 +1364,8 @@ def get_gpu_stats():
 def get_cpu_stats():
     cpu_usage = psutil.cpu_percent(interval=1)
     memory_info = psutil.virtual_memory()
-    memory_used = memory_info.used / (1024**2)
-    memory_total = memory_info.total / (1024**2)
+    memory_used = memory_info.used / (1024 ** 2)
+    memory_total = memory_info.total / (1024 ** 2)
     memory_percent = memory_info.percent
 
     pid = os.getpid()
@@ -1752,6 +1754,7 @@ If you encounter a memory error, try reducing the batch size per GPU to a smalle
                 check_finetune, inputs=[ch_finetune], outputs=[file_checkpoint_train, tokenizer_file, tokenizer_type]
             )
 
+
             def setup_load_settings():
                 output_components = [
                     exp_name,
@@ -1775,6 +1778,7 @@ If you encounter a memory error, try reducing the batch size per GPU to a smalle
                     ch_8bit_adam,
                 ]
                 return output_components
+
 
             outputs = setup_load_settings()
 
@@ -1872,14 +1876,18 @@ Reduce the Base model size from 5GB to 1.3GB. The new checkpoint file prunes out
         with gr.TabItem("System Info"):
             output_box = gr.Textbox(label="GPU and CPU Information", lines=20)
 
+
             def update_stats():
                 return get_combined_stats()
+
 
             update_button = gr.Button("Update Stats")
             update_button.click(fn=update_stats, outputs=output_box)
 
+
             def auto_update():
                 yield gr.update(value=update_stats())
+
 
             gr.update(fn=auto_update, inputs=[], outputs=output_box)
 

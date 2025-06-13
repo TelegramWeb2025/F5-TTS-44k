@@ -1082,10 +1082,9 @@ def vocab_extend(project_name, symbols, model_type):
         ckpt_path = str(cached_path("hf://SWivid/F5-TTS/F5TTS_Base/model_1200000.pt"))
     elif model_type == "E2TTS_Base":
         ckpt_path = str(cached_path("hf://SWivid/E2-TTS/E2TTS_Base/model_1200000.pt"))
+    vocab_size_new = len(miss_symbols)
 
     if ckpt_path:
-        vocab_size_new = len(miss_symbols)
-
         dataset_name = name_project.replace("_pinyin", "").replace("_char", "")
         new_ckpt_path = os.path.join(path_project_ckpts, dataset_name)
         os.makedirs(new_ckpt_path, exist_ok=True)
@@ -1094,7 +1093,7 @@ def vocab_extend(project_name, symbols, model_type):
         new_ckpt_file = os.path.join(new_ckpt_path, "pretrained_" + os.path.basename(ckpt_path))
         size = expand_model_embeddings(ckpt_path, new_ckpt_file, num_new_tokens=vocab_size_new)
     else:
-        size = len("vocab")
+        size = len(vocab)
 
     vocab_new = "\n".join(miss_symbols)
     return f"vocab old size : {size_vocab}\nvocab new size : {size}\nvocab add : {vocab_size_new}\nnew symbols :\n{vocab_new}"
